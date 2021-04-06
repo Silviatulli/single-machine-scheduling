@@ -40,16 +40,18 @@ predicate frag_order(set of 0..n_frags: fr) =
 
 %% function definitions
 % to get set of tasks that task 'i' depends on
-function set of int: depends_on(0..n_tasks: i) =  {depend_data[i,j] | j in 2..depend_data[i,1]+1};
+function set of int: dependents_of(0..n_tasks: i) =  {depend_data[i,j] | j in 2..depend_data[i,1]+1};
 % to get fragments of a particular task
 function set of 0..n_frags: frags_of(0..n_tasks: i) = {k | k in 1..n_frags where task_cor_fr[k]==i};
+
 % to get an array with as many 1's as number of tasks completed before deadline
-function array[int] of var opt 0..1: comp_tasks() = [1 | i in 1..n_tasks where st_frag[max(frags_of(i))] + prt_frag[max(frags_of(i))] <= deadline_t[i]];
+function array[int] of var opt 0..1: comp_tasks() = [1 | i in 1..n_tasks where (
+                                                    (st_frag[max(frags_of(i))] + prt_frag[max(frags_of(i))] <= deadline_t[i])
+                                                    /\ forall(t1 in dependents_of(i)) 
+                                                    (st_frag[max(frags_of(t1))] + prt_frag[max(frags_of(t1))] <= deadline_t[t1])
+                                                    )];
 % to sum elements of an array
 function int: sum(array [$T] of int: x);
-
-% variable to be maximized (objective) - completed tasks
-var 0..n_tasks: comp_tasks = sum(comp_tasks());
 
 %% Constraints
 % C1 - fragment can start only after its EST
@@ -66,10 +68,15 @@ constraint exclusive(1..n_frags);
 
 %C4 - if a task t1 depends on t2; last fragment of t2 should precede first fragment of t1
 constraint forall(t1 in 1..n_tasks where depend_data[t1,1]!=0) (
-  forall(t2 in depends_on(t1))
+  forall(t2 in dependents_of(t1))
     (precedes(st_frag[max(frags_of(t2))], prt_frag[max(frags_of(t2))], st_frag[min(frags_of(t1))])
   ));
 
-%% solve
-solve maximize comp_tasks;
+% variable to be maximized (objective) - completed tasks
+var 0..n_tasks: n_comp_tasks = sum(comp_tasks());
 
+%% solve
+solve maximize n_comp_tasks;
+
+array[int] of var opt 0..1: comp_tasks = comp_tasks();
+output[show(comp_tasks)];
