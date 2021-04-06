@@ -1,6 +1,7 @@
 # import required libraries, variables and functions
 from extract_data import *
-from disp_solution import disp_solution
+from disp_solution_2 import disp_solution
+import get_array_of_comp_tasks
 import pymzn
 from minizinc import Instance, Model, Solver
 
@@ -20,11 +21,11 @@ instance = Instance(gecode, sms)
 # solve and get results
 result = instance.solve()
 st_frag = result["st_frag"]
-comp_tasks = result["objective"]
+n_comp_tasks = result["objective"]
+comp_tasks_str = result.solution._output_item
+comp_tasks_str_edit = comp_tasks_str.strip("[").strip("]").split(", ")
+comp_tasks = get_array_of_comp_tasks.get_bool_comp_tasks(comp_tasks_str_edit)
 
-# write the solution .txt file in given format
-disp_solution(comp_tasks, st_frag, frag_t, frags, deadline_t, task_cor_frag)
-
-# print(st_frag, comp_tasks)
+disp_solution(comp_tasks, n_frags, n_comp_tasks, st_frag, frag_t, task_cor_frag)
 
 
