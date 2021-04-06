@@ -29,7 +29,7 @@ with fileinput.input() as data:
     num_depend = []
     dependencies = []
     for i in range(n_tasks):
-        l = data.readline().replace(' ','').strip('\n')
+        l = data.readline().split()
         count = 0
         for k in l:
             if count == 0:
